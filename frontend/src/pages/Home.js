@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  Calendar, Users, Vote, Zap, ArrowRight, Star, CheckCircle, 
+  Calendar, Users, Vote, Zap, ArrowRight, Star,
   MapPin, Clock, Heart, Globe, TrendingUp, Award, 
   Facebook, Twitter, Instagram, Mail, Phone, MessageCircle
 } from 'lucide-react';
@@ -509,10 +509,10 @@ const Home = () => {
             <div>
               <h3 className="font-semibold mb-4">Product</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white">Features</a></li>
-                <li><a href="#" className="hover:text-white">Pricing</a></li>
-                <li><a href="#" className="hover:text-white">API</a></li>
-                <li><a href="#" className="hover:text-white">Documentation</a></li>
+                <li><button className="hover:text-white">Features</button></li>
+                <li><button className="hover:text-white">Pricing</button></li>
+                <li><button className="hover:text-white">API</button></li>
+                <li><button className="hover:text-white">Documentation</button></li>
               </ul>
             </div>
             
@@ -527,8 +527,8 @@ const Home = () => {
                   <Phone size={16} />
                   <span>+1 (555) 123-4567</span>
                 </li>
-                <li><a href="#" className="hover:text-white">Help Center</a></li>
-                <li><a href="#" className="hover:text-white">Community</a></li>
+                <li><button className="hover:text-white">Help Center</button></li>
+                <li><button className="hover:text-white">Community</button></li>
               </ul>
             </div>
           </div>

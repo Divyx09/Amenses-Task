@@ -1,0 +1,9 @@
+# Vercel ignore file
+node_modules
+.git
+*.log
+.env*
+.DS_Store
+.vscode
+*.backup
+*.bak
