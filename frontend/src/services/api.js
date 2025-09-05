@@ -30,6 +30,7 @@ export const eventsAPI = {
   getAll: () => api.get('/events'),
   create: (eventData) => api.post('/events/create', eventData),
   join: (eventId) => api.post('/events/join', { eventId }),
+  getJoined: () => api.get('/events/joined'),
 };
 
 // Polls API

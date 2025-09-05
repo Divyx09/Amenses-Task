@@ -1,3 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Events Grid - 2 cards per row */
+.events-grid-2-cols {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px;
+}
+
+/* Mobile responsiveness - 1 card per row on small screens */
+@media (max-width: 768px) {
+  .events-grid-2-cols {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Custom Tailwind-style utilities */
 .bg-white\/95 { background-color: rgba(255, 255, 255, 0.95); }
 .backdrop-blur-lg { backdrop-filter: blur(16px); }

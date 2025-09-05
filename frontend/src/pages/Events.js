@@ -1,335 +1,660 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { 
-  Calendar, Users, Plus, X, Vote,
-  Clock, MapPin, User, ChevronRight
+  Calendar, Users, MapPin, Star, Clock, ArrowRight, Vote, Plus, X
 } from 'lucide-react';
-import { eventsAPI, pollsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { eventsAPI, pollsAPI } from '../services/api';
 
 const Events = () => {
   const [events, setEvents] = useState([]);
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [eventPolls, setEventPolls] = useState([]);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [showPollForm, setShowPollForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
-  const { user } = useAuth();
-
-  const [newEvent, setNewEvent] = useState({
-    title: '',
-    description: '',
-    date: '',
-    location: '',
-    category: ''
-  });
-
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [joinedEvents, setJoinedEvents] = useState(new Set());
+  const [showPollModal, setShowPollModal] = useState(false);
+  const [selectedEventForPoll, setSelectedEventForPoll] = useState(null);
   const [pollFormData, setPollFormData] = useState({
     question: '',
     options: ['', '']
   });
+  
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchEvents();
-  }, []);
-
-  useEffect(() => {
-    if (selectedEvent) {
-      fetchEventPolls(selectedEvent._id);
+    if (user) {
+      fetchJoinedEvents();
     }
-  }, [selectedEvent]);
+    
+    // Handle window resize for responsive design
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [user]);
 
   const fetchEvents = async () => {
     try {
+      setLoading(true);
       const response = await eventsAPI.getAll();
-      setEvents(response.data);
+      
+      // Mock data for demonstration - styled like the reference image
+      const mockEvents = [
+        {
+          _id: '1',
+          title: 'Developers Learning Community',
+          description: 'Join a program that turns you into a real developer, not just a learner.',
+          date: '2024-02-15',
+          time: '09:00 AM',
+          location: 'Ujjain',
+          category: 'Community',
+          imageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800',
+          attendees: 1250,
+          maxAttendees: 1500,
+          rating: 4.8,
+          price: 'Free',
+          organizer: 'DevCommunity',
+          bgColor: 'from-purple-600 to-purple-800',
+          buttonText: 'Join Community'
+        },
+        {
+          _id: '2',
+          title: 'React Node Internship Program',
+          description: 'A comprehensive program designed to transform aspiring developers into full-fledged web developers.',
+          date: '2024-02-20',
+          time: '02:00 PM',
+          location: 'Ujjain',
+          category: 'Internship',
+          imageUrl: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=800',
+          attendees: 85,
+          maxAttendees: 100,
+          rating: 4.9,
+          price: 'Paid',
+          organizer: 'TechVraksh',
+          bgColor: 'from-blue-500 to-purple-600',
+          buttonText: 'Apply Now'
+        },
+        {
+          _id: '3',
+          title: 'Hackathons & Competitions',
+          description: 'Show off your skills and win exciting prizes in our competitive programming events.',
+          date: '2024-02-25',
+          time: '06:00 PM',
+          location: 'Multiple Cities',
+          category: 'Competition',
+          imageUrl: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800',
+          attendees: 450,
+          maxAttendees: 500,
+          rating: 4.7,
+          price: 'Free',
+          organizer: 'CodeChampions',
+          bgColor: 'from-orange-500 to-red-600',
+          buttonText: 'Join Hackathon'
+        },
+        {
+          _id: '4',
+          title: 'Datacode Developers Meetups',
+          description: 'Connect with fellow developers, share knowledge, and build amazing projects together.',
+          date: '2024-03-05',
+          time: '10:00 AM',
+          location: 'Ujjain',
+          category: 'Meetup',
+          imageUrl: 'https://images.unsplash.com/photo-1515169067868-5387ec359bb5?w=800',
+          attendees: 320,
+          maxAttendees: 400,
+          rating: 4.6,
+          price: 'Free',
+          organizer: 'Datacode.in',
+          bgColor: 'from-purple-500 to-indigo-600',
+          buttonText: 'Join Meetup'
+        },
+        {
+          _id: '5',
+          title: 'AI & Machine Learning Workshop',
+          description: 'Deep dive into artificial intelligence and machine learning with hands-on projects.',
+          date: '2024-03-10',
+          time: '01:00 PM',
+          location: 'Ujjain',
+          category: 'Workshop',
+          imageUrl: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800',
+          attendees: 180,
+          maxAttendees: 200,
+          rating: 4.8,
+          price: '$199',
+          organizer: 'AI Institute',
+          bgColor: 'from-green-500 to-teal-600',
+          buttonText: 'Register Now'
+        },
+        {
+          _id: '6',
+          title: 'Startup Founders Summit',
+          description: 'Network with successful entrepreneurs and learn the secrets of building unicorn startups.',
+          date: '2024-03-15',
+          time: '11:00 AM',
+          location: 'Ujjain',
+          category: 'Summit',
+          imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800',
+          attendees: 280,
+          maxAttendees: 350,
+          rating: 4.9,
+          price: '$299',
+          organizer: 'Startup India',
+          bgColor: 'from-pink-500 to-rose-600',
+          buttonText: 'Get Tickets'
+        }
+      ];
+      
+      setEvents(response.data.length > 0 ? response.data : mockEvents);
+      setError('');
     } catch (err) {
-      setError('Failed to fetch events');
+      console.error('Error fetching events:', err);
+      setError('Failed to load events');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchEventPolls = async (eventId) => {
+  const fetchJoinedEvents = async () => {
+    if (!user) return;
+    
     try {
-      const response = await pollsAPI.getByEvent(eventId);
-      setEventPolls(response.data);
+      const response = await eventsAPI.getJoined();
+      const joinedEventIds = response.data.map(event => event._id);
+      setJoinedEvents(new Set(joinedEventIds));
     } catch (err) {
-      console.error('Failed to fetch event polls:', err);
-      setEventPolls([]);
-    }
-  };
-
-  const handleCreateEvent = async (e) => {
-    e.preventDefault();
-    try {
-      await eventsAPI.create(newEvent);
-      setNewEvent({ title: '', description: '', date: '', location: '', category: '' });
-      setShowCreateForm(false);
-      fetchEvents();
-    } catch (err) {
-      setError('Failed to create event');
+      console.error('Error fetching joined events:', err);
+      // If API fails, initialize with empty set
+      setJoinedEvents(new Set());
     }
   };
 
   const handleJoinEvent = async (eventId) => {
+    if (!user) {
+      alert('Please login to join events');
+      return;
+    }
+    
+    if (joinedEvents.has(eventId)) {
+      alert('You have already joined this event!');
+      return;
+    }
+    
     try {
-      await eventsAPI.join(eventId);
-      fetchEvents();
+      const response = await eventsAPI.join(eventId);
+      // Update local state immediately
+      setJoinedEvents(prev => new Set([...prev, eventId]));
+      alert('Successfully joined the event!');
     } catch (err) {
-      setError('Failed to join event');
+      console.error('Error joining event:', err);
+      if (err.response?.status === 400 && err.response?.data?.message?.includes('already')) {
+        alert('You have already joined this event!');
+        // Update local state to reflect the backend state
+        setJoinedEvents(prev => new Set([...prev, eventId]));
+      } else {
+        alert('Failed to join event. Please try again.');
+      }
     }
   };
 
   const handleCreatePoll = async () => {
-    if (!pollFormData.question.trim() || pollFormData.options.filter(opt => opt.trim()).length < 2) {
+    if (!user) {
+      alert('Please login to create polls');
       return;
     }
-
+    
+    if (!pollFormData.question.trim()) {
+      alert('Please enter a poll question');
+      return;
+    }
+    
+    const validOptions = pollFormData.options.filter(opt => opt.trim());
+    if (validOptions.length < 2) {
+      alert('Please provide at least 2 options');
+      return;
+    }
+    
     try {
-      const pollData = {
+      await pollsAPI.create({
+        eventId: selectedEventForPoll,
         question: pollFormData.question,
-        options: pollFormData.options.filter(opt => opt.trim()).map(text => ({ text })),
-        eventId: selectedEvent._id
-      };
+        options: validOptions
+      });
       
-      await pollsAPI.create(pollData);
       setPollFormData({ question: '', options: ['', ''] });
-      setShowPollForm(false);
-      fetchEventPolls(selectedEvent._id);
+      setShowPollModal(false);
+      setSelectedEventForPoll(null);
+      alert('Poll created successfully!');
     } catch (err) {
-      setError('Failed to create poll');
+      console.error('Error creating poll:', err);
+      alert('Failed to create poll. Please try again.');
     }
   };
 
-  const handleVote = async (pollId, optionIndex) => {
-    try {
-      await pollsAPI.vote(pollId, optionIndex);
-      fetchEventPolls(selectedEvent._id);
-    } catch (err) {
-      setError('Failed to vote');
+  const addPollOption = () => {
+    setPollFormData(prev => ({
+      ...prev,
+      options: [...prev.options, '']
+    }));
+  };
+
+  const removePollOption = (index) => {
+    if (pollFormData.options.length > 2) {
+      setPollFormData(prev => ({
+        ...prev,
+        options: prev.options.filter((_, i) => i !== index)
+      }));
     }
+  };
+
+  const updatePollOption = (index, value) => {
+    setPollFormData(prev => ({
+      ...prev,
+      options: prev.options.map((opt, i) => i === index ? value : opt)
+    }));
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="spinner mb-4"></div>
-          <p className="text-gray-600">Loading events...</p>
+      <div style={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        backgroundColor: '#fafafa'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '80px',
+            height: '80px',
+            border: '3px solid #f3f4f6',
+            borderTop: '3px solid #3b82f6',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 24px'
+          }}></div>
+          <p style={{ 
+            marginTop: '24px', 
+            fontSize: '18px', 
+            fontWeight: '600', 
+            color: '#374151' 
+          }}>
+            Loading amazing events...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        backgroundColor: '#fafafa'
+      }}>
+        <div style={{
+          textAlign: 'center',
+          background: 'white',
+          borderRadius: '12px',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          border: '1px solid #e5e7eb',
+          padding: '40px',
+          maxWidth: '400px'
+        }}>
+          <div style={{
+            width: '60px',
+            height: '60px',
+            background: '#fef2f2',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 20px',
+            border: '1px solid #fecaca'
+          }}>
+            <Calendar style={{ height: '28px', width: '28px', color: '#dc2626' }} />
+          </div>
+          <h2 style={{ 
+            fontSize: '24px', 
+            fontWeight: 'bold', 
+            color: '#111827', 
+            marginBottom: '12px' 
+          }}>
+            Oops! Something went wrong
+          </h2>
+          <p style={{ color: '#6b7280', marginBottom: '20px' }}>{error}</p>
+          <button 
+            onClick={fetchEvents}
+            style={{
+              background: '#3b82f6',
+              color: 'white',
+              fontWeight: '600',
+              padding: '10px 20px',
+              borderRadius: '8px',
+              border: '1px solid #2563eb',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+            }}
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div style={{ 
+      minHeight: '100vh', 
+      backgroundColor: '#fafafa',
+      padding: isMobile ? '24px 0' : '48px 0'
+    }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" style={{ 
+        paddingTop: isMobile ? '6px' : '48px',
+        paddingBottom: isMobile ? '6px' : '48px' 
+      }}>
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Events</h1>
-            <p className="text-gray-600">Discover and join amazing events</p>
-          </div>
-          <button 
-            onClick={() => setShowCreateForm(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-2 transition-colors duration-200"
+        <div className="text-center" style={{ marginBottom: isMobile ? '32px' : '64px' }}>
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
           >
-            <Plus size={20} />
-            <span>Create Event</span>
-          </button>
+            <h1 style={{
+              fontSize: isMobile ? '36px' : '64px',
+              fontWeight: 'bold',
+              background: 'linear-gradient(to right, #2563eb, #9333ea, #ec4899)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              marginBottom: '24px',
+              lineHeight: '1.1'
+            }}>
+              Upcoming Events
+            </h1>
+            <p style={{
+              fontSize: isMobile ? '18px' : '24px',
+              color: '#6b7280',
+              maxWidth: '896px',
+              margin: '0 auto',
+              lineHeight: '1.6',
+              padding: isMobile ? '0 16px' : '0'
+            }}>
+              Discover amazing events and connect with like-minded professionals
+            </p>
+            <div className="mt-8 flex justify-center">
+              <div className="w-24 h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-full"></div>
+            </div>
+          </motion.div>
         </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-            {error}
-          </div>
-        )}
-
-        {/* Create Event Form */}
-        <AnimatePresence>
-          {showCreateForm && (
-            <motion.div 
-              className="bg-white rounded-lg shadow-lg p-6 mb-8"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Create New Event</h2>
-                <button 
-                  onClick={() => setShowCreateForm(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X size={24} />
-                </button>
-              </div>
-              
-              <form onSubmit={handleCreateEvent} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Event Title *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={newEvent.title}
-                      onChange={(e) => setNewEvent(prev => ({ ...prev, title: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Enter event title"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Category
-                    </label>
-                    <select
-                      value={newEvent.category}
-                      onChange={(e) => setNewEvent(prev => ({ ...prev, category: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="">Select category</option>
-                      <option value="workshop">Workshop</option>
-                      <option value="seminar">Seminar</option>
-                      <option value="conference">Conference</option>
-                      <option value="networking">Networking</option>
-                      <option value="social">Social</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Date
-                    </label>
-                    <input
-                      type="datetime-local"
-                      value={newEvent.date}
-                      onChange={(e) => setNewEvent(prev => ({ ...prev, date: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Location
-                    </label>
-                    <input
-                      type="text"
-                      value={newEvent.location}
-                      onChange={(e) => setNewEvent(prev => ({ ...prev, location: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Enter location"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={newEvent.description}
-                    onChange={(e) => setNewEvent(prev => ({ ...prev, description: e.target.value }))}
-                    rows={4}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Describe your event..."
-                  />
-                </div>
-                
-                <div className="flex justify-end space-x-3">
-                  <button 
-                    type="button"
-                    onClick={() => setShowCreateForm(false)}
-                    className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit"
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors duration-200"
-                  >
-                    Create Event
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Events List */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {events.map((event) => (
-            <motion.div 
-              key={event._id} 
-              className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300"
-              initial={{ opacity: 0, y: 20 }}
+        {/* Events Cards Grid */}
+        <div 
+          className="events-grid-responsive"
+          style={{ 
+            display: 'grid', 
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', 
+            gap: isMobile ? '24px' : '32px'
+          }}
+        >
+          {events.map((event, index) => (
+            <motion.div
+              key={event._id}
+              initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
-              whileHover={{ y: -5 }}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              style={{
+                borderRadius: '16px',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08)',
+                background: '#fefefe',
+                border: '1px solid #e5e7eb',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                transform: 'translateY(0px)',
+                overflow: 'hidden'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 6px rgba(0, 0, 0, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0px)';
+                e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08)';
+              }}
             >
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{event.title}</h3>
-                  {event.category && (
-                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-                      {event.category}
-                    </span>
-                  )}
+              {/* Image Section */}
+              <div style={{ position: 'relative', height: '200px', overflow: 'hidden' }}>
+                <img
+                  src={event.imageUrl || 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800'}
+                  alt={event.title}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    transition: 'transform 0.3s ease'
+                  }}
+                  onError={(e) => {
+                    e.target.src = 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800';
+                  }}
+                />
+                
+                {/* Category Badge */}
+                <div style={{
+                  position: 'absolute',
+                  top: '12px',
+                  left: '12px',
+                  background: '#ffffff',
+                  color: '#374151',
+                  borderRadius: '20px',
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  border: '1px solid #e5e7eb',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                }}>
+                  {event.category}
                 </div>
+
+                {/* Organizer Badge */}
+                <div style={{
+                  position: 'absolute',
+                  top: '12px',
+                  right: '12px',
+                  background: '#ffffff',
+                  color: '#374151',
+                  borderRadius: '8px',
+                  padding: '6px 10px',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  border: '1px solid #e5e7eb',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                }}>
+                  {event.organizer}
+                </div>
+              </div>
+
+              {/* Content Section */}
+              <div style={{ padding: '20px' }}>
+                <h3 style={{
+                  fontSize: '20px',
+                  fontWeight: 'bold',
+                  color: '#1f2937',
+                  marginBottom: '8px',
+                  lineHeight: '1.3'
+                }}>
+                  {event.title}
+                </h3>
                 
-                {event.description && (
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                    {event.description}
-                  </p>
-                )}
-                
-                <div className="space-y-2 text-sm text-gray-600 mb-4">
-                  {event.date && (
-                    <div className="flex items-center">
-                      <Clock size={14} className="mr-2" />
-                      {new Date(event.date).toLocaleDateString()}
+                <p style={{
+                  color: '#6b7280',
+                  marginBottom: '16px',
+                  fontSize: '14px',
+                  lineHeight: '1.5',
+                  display: '-webkit-box',
+                  WebkitBoxOrient: 'vertical',
+                  WebkitLineClamp: 2,
+                  overflow: 'hidden'
+                }}>
+                  {event.description}
+                </p>
+
+                {/* Event Details */}
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    color: '#6b7280',
+                    marginBottom: '6px',
+                    fontSize: '13px'
+                  }}>
+                    <Calendar style={{ height: '14px', width: '14px', color: '#9ca3af' }} />
+                    <span>{new Date(event.date).toLocaleDateString()} at {event.time}</span>
+                  </div>
+                  
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    color: '#6b7280',
+                    marginBottom: '6px',
+                    fontSize: '13px'
+                  }}>
+                    <MapPin style={{ height: '14px', width: '14px', color: '#9ca3af' }} />
+                    <span>{event.location || 'Ujjain'}</span>
+                  </div>
+                  
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    color: '#6b7280',
+                    fontSize: '13px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Users style={{ height: '14px', width: '14px', color: '#9ca3af' }} />
+                      <span>{event.attendees} attendees</span>
                     </div>
-                  )}
-                  {event.location && (
-                    <div className="flex items-center">
-                      <MapPin size={14} className="mr-2" />
-                      {event.location}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Star style={{ height: '14px', width: '14px', color: '#fbbf24', fill: '#fbbf24' }} />
+                      <span style={{ fontWeight: '600', color: '#374151' }}>{event.rating}</span>
                     </div>
-                  )}
-                  <div className="flex items-center">
-                    <User size={14} className="mr-2" />
-                    {event.createdBy?.name || 'Unknown'}
                   </div>
                 </div>
-                
-                <div className="flex justify-between items-center">
+
+                {/* Action Buttons */}
+                <div style={{ display: 'flex', gap: '8px', flexDirection: isMobile ? 'column' : 'row' }}>
+                  {/* Join Event Button */}
                   <button 
-                    onClick={() => setSelectedEvent(event)}
-                    className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center space-x-1"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleJoinEvent(event._id);
+                    }}
+                    style={{
+                      flex: 1,
+                      background: joinedEvents.has(event._id) ? '#10b981' : '#3b82f6',
+                      color: 'white',
+                      fontWeight: '600',
+                      padding: '12px 16px',
+                      borderRadius: '10px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      fontSize: '14px'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!joinedEvents.has(event._id)) {
+                        e.target.style.background = '#2563eb';
+                      }
+                      e.target.style.transform = 'scale(1.02)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = joinedEvents.has(event._id) ? '#10b981' : '#3b82f6';
+                      e.target.style.transform = 'scale(1)';
+                    }}
                   >
-                    <span>View Details</span>
-                    <ChevronRight size={16} />
+                    <span>{joinedEvents.has(event._id) ? 'Joined' : 'Join Event'}</span>
+                    {!joinedEvents.has(event._id) && <ArrowRight style={{ height: '16px', width: '16px' }} />}
                   </button>
-                  
-                  {event.createdBy?._id !== user?.id && 
-                   !event.participants?.some(p => p._id === user?.id) && (
-                    <button 
-                      onClick={() => handleJoinEvent(event._id)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+
+                  {/* Create Poll Button */}
+                  <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setSelectedEventForPoll(event._id);
+                      setShowPollModal(true);
+                    }}
+                    style={{
+                      flex: isMobile ? 1 : 'auto',
+                      background: '#8b5cf6',
+                      color: 'white',
+                      fontWeight: '600',
+                      padding: '12px 16px',
+                      borderRadius: '10px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      fontSize: '14px',
+                      minWidth: isMobile ? 'auto' : '120px'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.background = '#7c3aed';
+                      e.target.style.transform = 'scale(1.02)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = '#8b5cf6';
+                      e.target.style.transform = 'scale(1)';
+                    }}
+                  >
+                    <Vote style={{ height: '16px', width: '16px' }} />
+                    <span>Poll</span>
+                  </button>
+
+                  {/* View Details Button */}
+                  <Link to={`/events/${event._id}`} style={{ display: 'block', flex: isMobile ? 1 : 'auto' }}>
+                    <button style={{
+                      width: '100%',
+                      background: '#6b7280',
+                      color: 'white',
+                      fontWeight: '600',
+                      padding: '12px 16px',
+                      borderRadius: '10px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      fontSize: '14px',
+                      minWidth: isMobile ? 'auto' : '100px'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.background = '#4b5563';
+                      e.target.style.transform = 'scale(1.02)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = '#6b7280';
+                      e.target.style.transform = 'scale(1)';
+                    }}
                     >
-                      Join Event
+                      <span>Details</span>
                     </button>
-                  )}
-                  
-                  {event.participants?.some(p => p._id === user?.id) && (
-                    <span className="text-green-600 font-medium text-sm flex items-center space-x-1">
-                      <span>✓ Joined</span>
-                    </span>
-                  )}
+                  </Link>
                 </div>
               </div>
             </motion.div>
@@ -338,275 +663,198 @@ const Events = () => {
 
         {/* Empty State */}
         {events.length === 0 && (
-          <motion.div 
-            className="text-center py-12"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            <Calendar size={64} className="mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No events yet</h3>
-            <p className="text-gray-600 mb-6">Be the first to create an amazing event!</p>
-            <button 
-              onClick={() => setShowCreateForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
-            >
-              Create First Event
-            </button>
-          </motion.div>
-        )}
-
-        {/* Event Details Modal */}
-        <AnimatePresence>
-          {selectedEvent && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <motion.div 
-                className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-              >
-                {/* Modal Header */}
-                <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-                  <h3 className="text-xl font-semibold text-gray-900">{selectedEvent.title}</h3>
-                  <button 
-                    onClick={() => setSelectedEvent(null)}
-                    className="text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    <X size={24} />
-                  </button>
-                </div>
-
-                <div className="p-6">
-                  {/* Event Details */}
-                  <div className="mb-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                      <div>
-                        <h4 className="font-medium text-gray-900 mb-3">Event Information</h4>
-                        <div className="space-y-2 text-sm text-gray-600">
-                          {selectedEvent.date && (
-                            <div className="flex items-center">
-                              <Clock size={16} className="mr-2" />
-                              {new Date(selectedEvent.date).toLocaleDateString()}
-                            </div>
-                          )}
-                          {selectedEvent.location && (
-                            <div className="flex items-center">
-                              <MapPin size={16} className="mr-2" />
-                              {selectedEvent.location}
-                            </div>
-                          )}
-                          <div className="flex items-center">
-                            <User size={16} className="mr-2" />
-                            Organized by {selectedEvent.createdBy?.name || 'Unknown'}
-                          </div>
-                          <div className="flex items-center">
-                            <Users size={16} className="mr-2" />
-                            {selectedEvent.participants?.length || 0} participants
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {selectedEvent.description && (
-                        <div>
-                          <h4 className="font-medium text-gray-900 mb-3">Description</h4>
-                          <p className="text-sm text-gray-600 leading-relaxed">
-                            {selectedEvent.description}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Participants */}
-                    {selectedEvent.participants && selectedEvent.participants.length > 0 && (
-                      <div className="mb-6">
-                        <h4 className="font-medium text-gray-900 mb-3">Participants</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedEvent.participants.map((participant) => (
-                            <span 
-                              key={participant._id} 
-                              className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
-                            >
-                              {participant.name}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Polls Section */}
-                  <div className="border-t pt-6">
-                    <div className="flex justify-between items-center mb-6">
-                      <h4 className="text-lg font-medium text-gray-900 flex items-center space-x-2">
-                        <Vote size={20} />
-                        <span>Event Polls</span>
-                      </h4>
-                      
-                      {(selectedEvent.createdBy?._id === user?.id || selectedEvent.participants?.some(p => p._id === user?.id)) && (
-                        <button 
-                          onClick={() => setShowPollForm(true)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center space-x-2 transition-colors duration-200"
-                        >
-                          <Plus size={16} />
-                          <span>Create Poll</span>
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Poll Creation Form */}
-                    <AnimatePresence>
-                      {showPollForm && (
-                        <motion.div 
-                          className="bg-gray-50 border rounded-lg p-4 mb-6"
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                        >
-                          <h5 className="font-medium text-gray-900 mb-4">Create New Poll</h5>
-                          <div className="space-y-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Poll Question
-                              </label>
-                              <input
-                                type="text"
-                                value={pollFormData.question}
-                                onChange={(e) => setPollFormData(prev => ({ ...prev, question: e.target.value }))}
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="What would you like to ask?"
-                              />
-                            </div>
-                            
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Options
-                              </label>
-                              <div className="space-y-2">
-                                {pollFormData.options.map((option, index) => (
-                                  <div key={index} className="flex items-center space-x-2">
-                                    <input
-                                      type="text"
-                                      value={option}
-                                      onChange={(e) => {
-                                        const newOptions = [...pollFormData.options];
-                                        newOptions[index] = e.target.value;
-                                        setPollFormData(prev => ({ ...prev, options: newOptions }));
-                                      }}
-                                      className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                                      placeholder={`Option ${index + 1}`}
-                                    />
-                                    {pollFormData.options.length > 2 && (
-                                      <button
-                                        onClick={() => {
-                                          const newOptions = pollFormData.options.filter((_, i) => i !== index);
-                                          setPollFormData(prev => ({ ...prev, options: newOptions }));
-                                        }}
-                                        className="text-red-600 hover:text-red-800 p-1"
-                                      >
-                                        <X size={16} />
-                                      </button>
-                                    )}
-                                  </div>
-                                ))}
-                                {pollFormData.options.length < 6 && (
-                                  <button
-                                    onClick={() => setPollFormData(prev => ({ ...prev, options: [...prev.options, ''] }))}
-                                    className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-1"
-                                  >
-                                    <Plus size={16} />
-                                    <span>Add Option</span>
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                            
-                            <div className="flex justify-end space-x-3">
-                              <button 
-                                onClick={() => {
-                                  setShowPollForm(false);
-                                  setPollFormData({ question: '', options: ['', ''] });
-                                }}
-                                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-                              >
-                                Cancel
-                              </button>
-                              <button 
-                                onClick={handleCreatePoll}
-                                disabled={!pollFormData.question.trim() || pollFormData.options.filter(opt => opt.trim()).length < 2}
-                                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-md font-medium transition-colors duration-200"
-                              >
-                                Create Poll
-                              </button>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    {/* Polls Display */}
-                    <div className="space-y-4">
-                      {eventPolls.length > 0 ? (
-                        eventPolls.map((poll) => (
-                          <div key={poll._id} className="bg-white border rounded-lg p-4">
-                            <h5 className="font-medium text-gray-900 mb-3">{poll.question}</h5>
-                            <div className="space-y-2">
-                              {poll.options.map((option, index) => {
-                                const totalVotes = poll.options.reduce((sum, opt) => sum + opt.votes.length, 0);
-                                const percentage = totalVotes > 0 ? (option.votes.length / totalVotes) * 100 : 0;
-                                const hasUserVoted = option.votes.some(vote => vote.toString() === user?.id);
-                                const canVote = selectedEvent.participants?.some(p => p._id === user?.id) || selectedEvent.createdBy?._id === user?.id;
-                                
-                                return (
-                                  <button
-                                    key={index}
-                                    onClick={() => canVote && handleVote(poll._id, index)}
-                                    disabled={!canVote}
-                                    className={`w-full text-left p-3 border rounded-md transition-all duration-200 ${
-                                      hasUserVoted 
-                                        ? 'border-green-500 bg-green-50' 
-                                        : canVote 
-                                          ? 'border-gray-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer' 
-                                          : 'border-gray-200 bg-gray-50 cursor-not-allowed'
-                                    }`}
-                                  >
-                                    <div className="flex justify-between items-center">
-                                      <span className="flex items-center space-x-2">
-                                        {hasUserVoted && <span className="text-green-600">✓</span>}
-                                        <span>{option.text}</span>
-                                      </span>
-                                      <div className="flex items-center space-x-2">
-                                        <div className="w-16 bg-gray-200 rounded-full h-2">
-                                          <div 
-                                            className="bg-blue-600 h-2 rounded-full transition-all duration-500" 
-                                            style={{ width: `${percentage}%` }}
-                                          ></div>
-                                        </div>
-                                        <span className="text-sm text-gray-500">{option.votes.length}</span>
-                                      </div>
-                                    </div>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                            <div className="mt-3 text-sm text-gray-500">
-                              Total votes: {poll.options.reduce((sum, opt) => sum + opt.votes.length, 0)}
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-center text-gray-500 py-8">
-                          <Vote size={48} className="mx-auto mb-2 opacity-50" />
-                          <p>No polls yet. Create one to engage participants!</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
+          <div className="text-center py-20">
+            <div className="w-32 h-32 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-xl">
+              <Calendar className="h-16 w-16 text-white" />
             </div>
-          )}
-        </AnimatePresence>
+            <h3 className="text-4xl font-bold text-gray-800 mb-4">No Events Available</h3>
+            <p className="text-xl text-gray-600 mb-8">Check back later for exciting upcoming events.</p>
+            <button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-xl transition-all duration-200 transform hover:scale-105">
+              Create Your First Event
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Poll Creation Modal */}
+      {showPollModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              padding: '32px',
+              width: '100%',
+              maxWidth: '500px',
+              maxHeight: '80vh',
+              overflow: 'auto',
+              boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937' }}>Create Poll</h3>
+              <button
+                onClick={() => {
+                  setShowPollModal(false);
+                  setPollFormData({ question: '', options: ['', ''] });
+                  setSelectedEventForPoll(null);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '8px',
+                  borderRadius: '8px',
+                  color: '#6b7280'
+                }}
+              >
+                <X style={{ height: '24px', width: '24px' }} />
+              </button>
+            </div>
+
+            {/* Poll Question */}
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                Poll Question
+              </label>
+              <input
+                type="text"
+                value={pollFormData.question}
+                onChange={(e) => setPollFormData(prev => ({ ...prev, question: e.target.value }))}
+                placeholder="What would you like to ask?"
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid #d1d5db',
+                  fontSize: '16px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+              />
+            </div>
+
+            {/* Poll Options */}
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                Poll Options
+              </label>
+              {pollFormData.options.map((option, index) => (
+                <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    value={option}
+                    onChange={(e) => updatePollOption(index, e.target.value)}
+                    placeholder={`Option ${index + 1}`}
+                    style={{
+                      flex: 1,
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      border: '1px solid #d1d5db',
+                      fontSize: '16px',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                    onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                  />
+                  {pollFormData.options.length > 2 && (
+                    <button
+                      onClick={() => removePollOption(index)}
+                      style={{
+                        background: '#ef4444',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '8px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <X style={{ height: '16px', width: '16px' }} />
+                    </button>
+                  )}
+                </div>
+              ))}
+              
+              <button
+                onClick={addPollOption}
+                style={{
+                  background: '#f3f4f6',
+                  color: '#374151',
+                  border: '1px dashed #9ca3af',
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                  cursor: 'pointer',
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600'
+                }}
+              >
+                <Plus style={{ height: '16px', width: '16px' }} />
+                Add Option
+              </button>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowPollModal(false);
+                  setPollFormData({ question: '', options: ['', ''] });
+                  setSelectedEventForPoll(null);
+                }}
+                style={{
+                  background: '#f3f4f6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '12px 24px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreatePoll}
+                style={{
+                  background: '#8b5cf6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '12px 24px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600'
+                }}
+              >
+                Create Poll
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

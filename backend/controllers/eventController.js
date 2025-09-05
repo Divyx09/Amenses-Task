@@ -28,18 +28,45 @@ exports.joinEvent = async (req, res) => {
     const { eventId } = req.body;
     const userId = req.user.userId;
     const event = await Event.findById(eventId);
-    if (!event) return res.status(404).json({ message: 'Event not found' });
+    
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+    
     // Convert ObjectIds to string for comparison
     const alreadyJoined = event.participants.some(
       (participant) => participant.toString() === userId
     );
-    if (!alreadyJoined) {
-      event.participants.push(userId);
-      await event.save();
+    
+    if (alreadyJoined) {
+      return res.status(400).json({ 
+        message: 'User already joined this event',
+        event: event 
+      });
     }
-    res.json(event);
+    
+    event.participants.push(userId);
+    await event.save();
+    
+    res.json({ 
+      message: 'Successfully joined event',
+      event: event 
+    });
   } catch (err) {
     console.error('Join event error:', err);
-    res.status(500).json({ message: 'Server error', error: err.message } );
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+exports.getJoinedEvents = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const events = await Event.find({ participants: userId })
+      .populate('createdBy', 'name email')
+      .populate('participants', 'name email');
+    res.json(events);
+  } catch (err) {
+    console.error('Get joined events error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };

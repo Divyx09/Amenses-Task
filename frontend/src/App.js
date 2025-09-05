@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Events from './pages/Events';
+import EventDetails from './pages/EventDetails';
 import './App.css';
 
 const PrivateRoute = ({ children }) => {
@@ -48,6 +49,14 @@ function App() {
                 element={
                   <PrivateRoute>
                     <Events />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/events/:id" 
+                element={
+                  <PrivateRoute>
+                    <EventDetails />
                   </PrivateRoute>
                 } 
               />
